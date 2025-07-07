@@ -37,6 +37,6 @@ func ConnectMongo() *mongo.Collection {
         log.Fatalf("MongoDB ping error: %v", err)
     }
 
-    log.Println("✅ Connected to MongoDB")
+    log.Println("The connection to MongoDB has been established")
     return client.Database(dbName).Collection(collectionName)
 }

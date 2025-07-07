@@ -1,9 +1,10 @@
 package service
 
 import (
-	"context"
+    "context"
 	"fmt"
 	"time"
+    "github.com/nishant1479/URL_Shortener/cache"
 	"github.com/nishant1479/URL_Shortener/models"
 	"github.com/nishant1479/URL_Shortener/db"
 	"github.com/nishant1479/URL_Shortener/utils"
@@ -44,16 +45,27 @@ func ShortenURL(originalURL string, validMinutes int, repo db.URLDB) (string, er
 
     return shortKey, nil
 }
+
 func ResolveURL(shortKey string, repo db.URLDB) (string, error) {
+    // Try cache first
+    url, err := cache.GetURL(shortKey)
+    if err == nil {
+        return url, nil
+    }
+
+    // Fallback to DB
     urlDoc, err := repo.FindByShortKey(context.TODO(), shortKey)
     if err != nil {
         return "", err
     }
 
-    // Check for expiration
     if time.Now().After(urlDoc.Expiration) {
         return "", fmt.Errorf("link expired")
     }
+
+    // Save to cache
+    ttl := time.Until(urlDoc.Expiration)
+    _ = cache.SetURL(shortKey, urlDoc.OriginalURL, ttl)
 
     return urlDoc.OriginalURL, nil
 }

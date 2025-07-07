@@ -1,18 +1,31 @@
 package main
 
 import (
-    "net/http"
+	"log"
+	"net/http"
+
+	"github.com/nishant1479/URL_Shortener/config"
 	"github.com/nishant1479/URL_Shortener/db"
 	"github.com/nishant1479/URL_Shortener/handler"
-	"github.com/nishant1479/URL_Shortener/config"
 )
 
 func main() {
-    collection := config.ConnectMongo()
-    repo := db.NewURLDB(collection)
+    // Connect to MongoDB
+    mongoCollection := config.ConnectMongo()
+    urlRepo := db.NewURLDB(mongoCollection)
 
-    http.HandleFunc("/shorten", handler.MakeShortenHandler(repo))
+    // Connect to Redis
+    config.ConnectRedis()
 
-    // TODO: Add GET /{shortKey} handler later
-    http.ListenAndServe(":8080", nil)
+    // Routes
+    http.HandleFunc("/shorten", handler.MakeShortenHandler(urlRepo))
+
+    // TODO: Add GET /{shortKey} redirect handler
+    // Example: http.HandleFunc("/", handler.MakeRedirectHandler(urlRepo))
+
+    log.Println("🚀 Server running at http://localhost:8080")
+    err := http.ListenAndServe(":8080", nil)
+    if err != nil {
+        log.Fatal("❌ Server error:", err)
+    }
 }
