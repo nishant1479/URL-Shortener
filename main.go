@@ -19,6 +19,8 @@ func main() {
 
     // Routes
     http.HandleFunc("/shorten", handler.MakeShortenHandler(urlRepo))
+    http.HandleFunc("/", handler.MakeRedirectHandler(*urlRepo))
+
 
     // TODO: Add GET /{shortKey} redirect handler
     // Example: http.HandleFunc("/", handler.MakeRedirectHandler(urlRepo))
@@ -26,6 +28,6 @@ func main() {
     log.Println("🚀 Server running at http://localhost:8080")
     err := http.ListenAndServe(":8080", nil)
     if err != nil {
-        log.Fatal("❌ Server error:", err)
+        log.Fatal("Server error:", err)
     }
 }
