@@ -46,26 +46,48 @@ func ShortenURL(originalURL string, validMinutes int, repo db.URLDB) (string, er
     return shortKey, nil
 }
 
+
 func ResolveURL(shortKey string, repo db.URLDB) (string, error) {
-    // Try cache first
-    url, err := cache.GetURL(shortKey)
-    if err == nil {
+    resultCh := make(chan string)
+    errCh := make(chan error)
+
+    //  Redis goroutine
+    go func() {
+        url, err := cache.GetURL(shortKey)
+        if err == nil && url != "" {
+            resultCh <- url
+        } else {
+            errCh <- err
+        }
+    }()
+
+    //  MongoDB goroutine
+    go func() {
+        doc, err := repo.FindByShortKey(context.TODO(), shortKey)
+        if err != nil {
+            errCh <- err
+            return
+        }
+
+        // Check expiration
+        if time.Now().After(doc.Expiration) {
+            errCh <- fmt.Errorf("URL expired")
+            return
+        }
+
+        // Cache in Redis for future
+        go cache.SetURL(shortKey, doc.OriginalURL, time.Until(doc.Expiration))
+
+        resultCh <- doc.OriginalURL
+    }()
+
+    //  Whichever wins the race returns first
+    select {
+    case url := <-resultCh:
         return url, nil
-    }
-
-    // Fallback to DB
-    urlDoc, err := repo.FindByShortKey(context.TODO(), shortKey)
-    if err != nil {
+    case err := <-errCh:
         return "", err
+    case <-time.After(2 * time.Second): // timeout safety
+        return "", fmt.Errorf("timeout resolving URL")
     }
-
-    if time.Now().After(urlDoc.Expiration) {
-        return "", fmt.Errorf("link expired")
-    }
-
-    // Save to cache
-    ttl := time.Until(urlDoc.Expiration)
-    _ = cache.SetURL(shortKey, urlDoc.OriginalURL, ttl)
-
-    return urlDoc.OriginalURL, nil
 }

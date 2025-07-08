@@ -21,6 +21,7 @@ func ConnectMongo() *mongo.Collection {
     uri := os.Getenv("MONGODB_URI")
     dbName := os.Getenv("MONGO_DB_NAME")
     collectionName := os.Getenv("MONGO_COLLECTION_NAME")
+    // apiKey := os.Getenv("API_KEY")
 
     serverAPI := options.ServerAPI(options.ServerAPIVersion1)
     opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
