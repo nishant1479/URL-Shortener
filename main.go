@@ -9,6 +9,7 @@ import (
 	"github.com/nishant1479/URL_Shortener/db"
 	"github.com/nishant1479/URL_Shortener/handler"
 	"github.com/nishant1479/URL_Shortener/middleware"
+	"github.com/nishant1479/URL_Shortener/utils"
 )
 
 func main() {
@@ -29,5 +30,11 @@ func main() {
 	if err != nil {
 		log.Fatal("Server error:", err)
 	}
-
+    go func() {
+		ticker := time.NewTicker(10 * time.Minute)
+		for {
+			<-ticker.C
+			utils.RemoveExpiredLinks()
+		}
+	}()
 }
