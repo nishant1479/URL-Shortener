@@ -4,7 +4,8 @@ import (
     "encoding/json"
     "net/http"
 	"github.com/nishant1479/URL_Shortener/service"
-	"github.com/nishant1479/URL_Shortener/db"
+    "github.com/nishant1479/URL_Shortener/db"
+	"github.com/nishant1479/URL_Shortener/utils"
 )
 
 type ShortenRequest struct {
@@ -18,6 +19,8 @@ type ShortenResponse struct {
 
 func MakeShortenHandler(repo *db.URLDB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
+
+
         var req ShortenRequest
         err := json.NewDecoder(r.Body).Decode(&req)
         if err != nil || req.OriginalURL == "" {
@@ -35,6 +38,7 @@ func MakeShortenHandler(repo *db.URLDB) http.HandlerFunc {
             http.Error(w, "Error creating short URL: "+err.Error(), http.StatusInternalServerError)
             return
         }
+        go utils.LogClickAsync(shortKey, r)
 
         // Build full short URL
         shortURL := "http://localhost:8080/" + shortKey

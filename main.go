@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/nishant1479/URL_Shortener/config"
 	"github.com/nishant1479/URL_Shortener/db"
@@ -11,24 +12,22 @@ import (
 )
 
 func main() {
-    // Connect to MongoDB
-    mongoCollection := config.ConnectMongo()
-    urlRepo := db.NewURLDB(mongoCollection)
+	mongoCollection := config.GetCollection("urlshortener", "urls")
+	urlRepo := db.NewURLDB(mongoCollection)
 
-    // Connect to Redis
-    config.ConnectRedis()
+	config.ConnectRedis()
 
-    // Routes
-http.HandleFunc("/shorten", middleware.APIKeyAuth(handler.MakeShortenHandler(urlRepo)))
-    http.HandleFunc("/", handler.MakeRedirectHandler(*urlRepo))
+	// Routes
+	http.HandleFunc("/shorten", middleware.APIKeyAuth(handler.MakeShortenHandler(urlRepo)))
+	http.HandleFunc("/", handler.MakeRedirectHandler(*urlRepo))
 
+	// TODO: Add GET /{shortKey} redirect handler
+	// Example: http.HandleFunc("/", handler.MakeRedirectHandler(urlRepo))
 
-    // TODO: Add GET /{shortKey} redirect handler
-    // Example: http.HandleFunc("/", handler.MakeRedirectHandler(urlRepo))
+	log.Println("Server running at http://localhost:8080")
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		log.Fatal("Server error:", err)
+	}
 
-    log.Println("Server running at http://localhost:8080")
-    err := http.ListenAndServe(":8080", nil)
-    if err != nil {
-        log.Fatal("Server error:", err)
-    }
 }

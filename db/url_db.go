@@ -27,3 +27,4 @@ func (r *URLDB) FindByShortKey(ctx context.Context, key string) (models.URL, err
     err := r.Collection.FindOne(ctx, bson.M{"_id": key}).Decode(&url)
     return url, err
 }
+
