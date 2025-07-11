@@ -1,3 +1,3 @@
-.env
-test/test_mongo.go
-test/test_mid.go
+backend/.env
+backend/test/test_mongo.go
+backend/test/test_mid.go
